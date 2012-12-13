@@ -1,3 +1,13 @@
+unzip (6.0-8ubuntu1) raring; urgency=low
+
+  * Resynchronise with Debian.  Remaining changes:
+    - Add patch from archlinux which adds the -O option, allowing a charset
+      to be specified for the proper unzipping of non-Latin and non-Unicode
+      filenames.
+    - Use correct strip program when cross-building.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 13 Dec 2012 16:08:03 +0000
+
 unzip (6.0-8) unstable; urgency=low
 
   * Made unzip -X to actually restore uid/gid information.
@@ -7,6 +17,22 @@ unzip (6.0-8) unstable; urgency=low
     Thanks to M Joonas Pihlaja for the report.
 
  -- Santiago Vila <sanvila@debian.org>  Wed, 28 Nov 2012 12:41:34 +0100
+
+unzip (6.0-7ubuntu2) raring; urgency=low
+
+  * Use correct strip program when cross-building.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 04 Dec 2012 15:15:23 +0000
+
+unzip (6.0-7ubuntu1) quantal; urgency=low
+
+  * Merge from Debian unstable. Remaining change:
+    - Added patch from archlinux which adds the -O option allowing a charset
+    to be specified for the proper unzipping of non-latin and non-unicode
+    filenames.
+  * Merge adds Multi-Arch: foreign. (LP: #1010450)
+
+ -- Logan Rosen <logatronico@gmail.com>  Sun, 05 Aug 2012 21:31:45 -0400
 
 unzip (6.0-7) unstable; urgency=low
 
@@ -26,6 +52,14 @@ unzip (6.0-5) unstable; urgency=low
     Patch taken from 6.10 beta. Thanks to sms. Closes: #630078.
 
  -- Santiago Vila <sanvila@debian.org>  Fri, 01 Jul 2011 19:06:08 +0200
+
+unzip (6.0-4ubuntu1) natty; urgency=low
+
+  * Added patch from archlinux which adds the -O option allowing a charset
+    to be specified for the proper unzipping of non-latin and non-unicode
+    filenames. (LP: #580961)
+
+ -- Brian Thomason <brian.thomason@canonical.com>  Wed, 12 Jan 2011 20:08:14 -0500
 
 unzip (6.0-4) unstable; urgency=low
 
