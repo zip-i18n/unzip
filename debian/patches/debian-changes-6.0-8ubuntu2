@@ -1,0 +1,233 @@
+Description: Upstream changes introduced in version 6.0-8ubuntu2
+ This patch has been created by dpkg-source during the package build.
+ Here's the last changelog entry, hopefully it gives details on why
+ those changes were made:
+ .
+ unzip (6.0-8ubuntu2) oneiric; urgency=low
+ .
+   * debian/patches:
+      + Don't apply 06-unzip60-alt-iconv-utf8.
+      + 07-alt-natspec - Apply natspec patch from
+        http://sisyphus.ru/ru/srpm/Sisyphus/unzip/patches/0 to support automatic
+        decoding of filenames in archives, created with different locale (e.g. on
+        Windows). Closes: #580961.
+   * Don't set locale on initialization.
+ .
+ The person named in the Author field signed this changelog entry.
+Author: Dmitry Frolov (Launchpad.net) <dmitry.frolov@gmail.com>
+Bug-Debian: http://bugs.debian.org/580961
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: http://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: <YYYY-MM-DD>
+
+--- unzip-6.0.orig/unzpriv.h
++++ unzip-6.0/unzpriv.h
+@@ -3008,7 +3008,7 @@ char    *GetLoadPath     OF((__GPRO));
+          !(((islochdr) || (isuxatt)) && \
+            ((hostver) == 25 || (hostver) == 26 || (hostver) == 40))) || \
+         (hostnum) == FS_HPFS_ || \
+-        ((hostnum) == FS_NTFS_/* && (hostver) == 50*/)) { \
++        ((hostnum) == FS_NTFS_ /* && (hostver) == 50 */ )) { \
+         _OEM_INTERN((string)); \
+     } else { \
+         _ISO_INTERN((string)); \
+--- unzip-6.0.orig/unzip.c
++++ unzip-6.0/unzip.c
+@@ -327,13 +327,21 @@ static ZCONST char Far ZipInfoUsageLine2
+   -2  just filenames but allow -h/-t/-z  -l  long Unix \"ls -l\" format\n\
+                                          -v  verbose, multi-page format\n";
+ 
++#ifndef UNIX
+ static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
+   -h  print header line       -t  print totals for listed files or for all\n\
+   -z  print zipfile comment   -T  print file times in sortable decimal format\
+ \n  -C  be case-insensitive   %s\
++  -x  exclude filenames that follow from listing\n";
++#else /* UNIX */
++static ZCONST char Far ZipInfoUsageLine3[] = "miscellaneous options:\n\
++  -h  print header line       -t  print totals for listed files or for all\n\
++  -z  print zipfile comment  %c-T%c print file times in sortable decimal format\
++\n %c-C%c be case-insensitive   %s\
+   -x  exclude filenames that follow from listing\n\
+   -O CHARSET  specify a character encoding for DOS, Windows and OS/2 archives\n\
+   -I CHARSET  specify a character encoding for UNIX and other archives\n";
++#endif /* !UNIX */
+ #ifdef MORE
+    static ZCONST char Far ZipInfoUsageLine4[] =
+      "  -M  page output through built-in \"more\"\n";
+@@ -666,7 +674,7 @@ modifiers:\n\
+   -U  use escapes for all non-ASCII Unicode  -UU ignore any Unicode fields\n\
+   -C  match filenames case-insensitively     -L  make (some) names \
+ lowercase\n %-42s  -V  retain VMS version numbers\n%s";
+-#else /* !VMS */
++#elif (defined UNIX)
+ static ZCONST char Far UnzipUsageLine4[] = "\
+ modifiers:\n\
+   -n  never overwrite existing files         -q  quiet mode (-qq => quieter)\n\
+@@ -676,7 +684,16 @@ modifiers:\n\
+   -C  match filenames case-insensitively     -L  make (some) names \
+ lowercase\n %-42s  -V  retain VMS version numbers\n%s\
+   -O CHARSET  specify a character encoding for DOS, Windows and OS/2 archives\n\
+-  -I CHARSET  specify a character encoding for UNIX and other archives\n";
++  -I CHARSET  specify a character encoding for UNIX and other archives\n\n";
++#else /* !VMS */
++static ZCONST char Far UnzipUsageLine4[] = "\
++modifiers:\n\
++  -n  never overwrite existing files         -q  quiet mode (-qq => quieter)\n\
++  -o  overwrite files WITHOUT prompting      -a  auto-convert any text files\n\
++  -j  junk paths (do not make directories)   -aa treat ALL files as text\n\
++  -U  use escapes for all non-ASCII Unicode  -UU ignore any Unicode fields\n\
++  -C  match filenames case-insensitively     -L  make (some) names \
++lowercase\n %-42s  -V  retain VMS version numbers\n%s";
+ #endif /* ?VMS */
+ #else /* !UNICODE_SUPPORT */
+ #ifdef VMS
+@@ -695,9 +712,7 @@ modifiers:\n\
+   -o  overwrite files WITHOUT prompting      -a  auto-convert any text files\n\
+   -j  junk paths (do not make directories)   -aa treat ALL files as text\n\
+   -C  match filenames case-insensitively     -L  make (some) names \
+-lowercase\n %-42s  -V  retain VMS version numbers\n%s\
+-  -O CHARSET  specify a character encoding for DOS, Windows and OS/2 archives\n\
+-  -I CHARSET  specify a character encoding for UNIX and other archives\n";
++lowercase\n %-42s  -V  retain VMS version numbers\n%s";
+ #endif /* ?VMS */
+ #endif /* ?UNICODE_SUPPORT */
+ 
+--- unzip-6.0.orig/unix/unix.c
++++ unzip-6.0/unix/unix.c
+@@ -31,7 +31,7 @@
+ #include "unzip.h"
+ 
+ #include <iconv.h>
+-#include <natspec.h>
++#include <langinfo.h>
+ 
+ #ifdef SCO_XENIX
+ #  define SYSNDIR
+@@ -1879,42 +1879,88 @@ static void qlfix(__G__ ef_ptr, ef_len)
+ #endif /* QLZIP */
+ 
+ 
++typedef struct {
++    char *local_charset;
++    char *archive_charset;
++} CHARSET_MAP;
++
++/* A mapping of local <-> archive charsets used by default to convert filenames
++ * of DOS/Windows Zip archives. Currently very basic. */
++static CHARSET_MAP dos_charset_map[] = {
++    { "ANSI_X3.4-1968", "CP850" },
++    { "ISO-8859-1", "CP850" },
++    { "CP1252", "CP850" },
++    { "UTF-8", "CP866" },
++    { "KOI8-R", "CP866" },
++    { "KOI8-U", "CP866" },
++    { "ISO-8859-5", "CP866" }
++};
++
+ char OEM_CP[MAX_CP_NAME] = "";
+ char ISO_CP[MAX_CP_NAME] = "";
+ 
+-/* Get the default value of OEM_CP based on the current locale.
++/* Try to guess the default value of OEM_CP based on the current locale.
+  * ISO_CP is left alone for now. */
+ void init_conversion_charsets()
+ {
++    const char *local_charset;
++    int i;
++
+     /* Make a guess only if OEM_CP not already set. */ 
+     if(*OEM_CP == '\0') {
+-        const char * archive_charset = natspec_get_charset_by_locale(NATSPEC_DOSCS, "");
+-        strncpy(OEM_CP, archive_charset, sizeof(OEM_CP));
++    	local_charset = nl_langinfo(CODESET);
++    	for(i = 0; i < sizeof(dos_charset_map)/sizeof(CHARSET_MAP); i++)
++    		if(!strcasecmp(local_charset, dos_charset_map[i].local_charset)) {
++    			strncpy(OEM_CP, dos_charset_map[i].archive_charset,
++    					sizeof(OEM_CP));
++    			break;
++    		}
+     }
++}
+ 
+-    if(*ISO_CP == '\0') {
+-        const char * archive_charset = natspec_get_charset_by_locale(NATSPEC_WINCS, "");
+-        strncpy(ISO_CP, archive_charset, sizeof(ISO_CP));
+-    }
++/* Convert a string from one encoding to the current locale using iconv().
++ * Be as non-intrusive as possible. If error is encountered during covertion
++ * just leave the string intact. */
++static void charset_to_intern(char *string, char *from_charset)
++{
++    iconv_t cd;
++    char *s,*d, *buf;
++    size_t slen, dlen, buflen;
++    const char *local_charset;
++
++    if(*from_charset == '\0')
++    	return;
++
++    buf = NULL;
++    local_charset = nl_langinfo(CODESET);
++
++    if((cd = iconv_open(local_charset, from_charset)) == (iconv_t)-1)
++        return;
+ 
++    slen = strlen(string);
++    s = string;
++    dlen = buflen = 2*slen;
++    d = buf = malloc(buflen + 1);
++    if(!d)
++    	goto cleanup;
++    bzero(buf,buflen);
++    if(iconv(cd, &s, &slen, &d, &dlen) == (size_t)-1)
++    	goto cleanup;
++    strncpy(string, buf, buflen);
++    
++    cleanup:
++    free(buf);
++    iconv_close(cd);
+ }
+ 
+ /* Convert a string from OEM_CP to the current locale charset. */
+ inline void oem_intern(char *string)
+ {
+-    char *buf = natspec_convert(string, 0, OEM_CP, 0);
+-	/* Since Ext_ASCII_TO_Native used only for G.filename[FILNAMESIZE],
+-	   use FILNAMSIZ as string size */
+-    strncpy(string, buf, FILNAMSIZ);
+-	free (buf);
++    charset_to_intern(string, OEM_CP);
+ }
+ 
+ /* Convert a string from ISO_CP to the current locale charset. */
+ inline void iso_intern(char *string)
+ {
+-    char *buf = natspec_convert(string, 0, ISO_CP, 0);
+-	/* Since Ext_ASCII_TO_Native used only for G.filename[FILNAMESIZE],
+-	   use FILNAMSIZ as string size */
+-    strncpy(string, buf, FILNAMSIZ);
+-	free (buf);
++    charset_to_intern(string, ISO_CP);
+ }
+--- unzip-6.0.orig/unix/Makefile
++++ unzip-6.0/unix/Makefile
+@@ -52,7 +52,7 @@ CF_NOOPT = -I. -I$(IZ_BZIP2) -DUNIX $(LO
+ CF = $(CFLAGS) $(CF_NOOPT)
+ LFLAGS1 =
+ LF = -o unzip$E $(LFLAGS1)
+-LF2 = -l natspec
++LF2 = -s
+ 
+ # UnZipSFX flags
+ SL = -o unzipsfx$E $(LFLAGS1)
