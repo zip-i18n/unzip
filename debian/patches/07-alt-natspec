@@ -5,8 +5,8 @@ diff -pru unzip60.orig/unix/Makefile unzip60/unix/Makefile
  CFLAGS = -O
  CF_NOOPT = -I. -I$(IZ_BZIP2) -DUNIX $(LOC)
  CF = $(CFLAGS) $(CF_NOOPT)
--LFLAGS1 = -l natspec
-+LFLAGS1 =
+-LFLAGS1 =
++LFLAGS1 = -l natspec
  LF = -o unzip$E $(LFLAGS1)
  LF2 = -s
  
