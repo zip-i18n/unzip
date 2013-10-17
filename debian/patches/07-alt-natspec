@@ -1,15 +1,15 @@
 diff -pru unzip60.orig/unix/Makefile unzip60/unix/Makefile
 --- unzip60.orig/unix/Makefile	2009-01-19 04:41:18.000000000 +0600
 +++ unzip60/unix/Makefile	2011-01-06 17:45:18.000000000 +0600
-@@ -50,7 +50,7 @@
- CFLAGS = -O
- CF_NOOPT = -I. -I$(IZ_BZIP2) -DUNIX $(LOC)
+@@ -52,7 +52,7 @@ CF_NOOPT = -I. -I$(IZ_BZIP2) -DUNIX $(LO
  CF = $(CFLAGS) $(CF_NOOPT)
--LFLAGS1 =
-+LFLAGS1 = -l natspec
+ LFLAGS1 =
  LF = -o unzip$E $(LFLAGS1)
- LF2 = -s
+-LF2 = -s
++LF2 = -l natspec
  
+ # UnZipSFX flags
+ SL = -o unzipsfx$E $(LFLAGS1)
 diff -pru unzip60.orig/unix/unix.c unzip60/unix/unix.c
 --- unzip60.orig/unix/unix.c	2009-01-24 05:31:26.000000000 +0600
 +++ unzip60/unix/unix.c	2011-01-06 17:45:18.000000000 +0600
