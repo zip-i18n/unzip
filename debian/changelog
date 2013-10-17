@@ -1,14 +1,31 @@
-unzip (6.0-8ubuntu1i18n4) oneiric; urgency=low
+unzip (6.0-9ubuntu1i18n4) saucy; urgency=low
 
   * debian/patches:
-     + Don't apply 06-unzip60-alt-iconv-utf8.
-     + 07-alt-natspec - Apply natspec patch from
-       http://sisyphus.ru/ru/srpm/Sisyphus/unzip/patches/0 to support automatic
-       decoding of filenames in archives, created with different locale (e.g. on
-       Windows). Closes: #580961.
+     - Don't apply 06-unzip60-alt-iconv-utf8 patch from archlinux.
+     - 07-alt-natspec - Apply natspec patch from
+       http://sisyphus.ru/ru/srpm/Sisyphus/unzip/patches/0 to support
+       automatic decoding of filenames in archives, created with different
+       locale (e.g. on Windows). Closes: #580961.
   * Don't set locale on initialization.
 
  -- Dmitry Frolov (Launchpad.net) <dmitry.frolov@gmail.com>  Mon, 18 Feb 2013 16:02:02 +0700
+
+unzip (6.0-9ubuntu1) saucy; urgency=low
+
+  * Resynchronise with Debian.  Remaining changes:
+    - Add patch from archlinux which adds the -O option, allowing a charset
+      to be specified for the proper unzipping of non-Latin and non-Unicode
+      filenames.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 13 May 2013 13:00:12 +0100
+
+unzip (6.0-9) unstable; urgency=low
+
+  * Added NO_WORKING_ISPRINT to DEFINES so that UTF8 filenames are
+    displayed correctly. Reported by Slavek Banko. Closes: #682682.
+  * Use the right strip command when cross-building. Closes: #695141.
+
+ -- Santiago Vila <sanvila@debian.org>  Sun, 24 Feb 2013 17:12:00 +0100
 
 unzip (6.0-8ubuntu1) raring; urgency=low
 
