@@ -7,7 +7,7 @@ history = History.600
 CC = gcc
 export DEB_BUILD_MAINT_OPTIONS=hardening=-format
 CFLAGS := `dpkg-buildflags --get CFLAGS` -Wall
-LDFLAGS := `dpkg-buildflags --get LDFLAGS`
+LDFLAGS := `dpkg-buildflags --get LDFLAGS` -l natspec
 CPPFLAGS := `dpkg-buildflags --get CPPFLAGS`
 DEFINES = -DACORN_FTYPE_NFS -DWILD_STOP_AT_DIR -DLARGE_FILE_SUPPORT \
  -DUNICODE_SUPPORT -DUNICODE_WCHAR -DUTF8_MAYBE_NATIVE -DNO_LCHMOD \
