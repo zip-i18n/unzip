@@ -30,6 +30,9 @@
 #define UNZIP_INTERNAL
 #include "unzip.h"
 
+#include <iconv.h>
+#include <natspec.h>
+
 #ifdef SCO_XENIX
 #  define SYSNDIR
 #else  /* SCO Unix, AIX, DNIX, TI SysV, Coherent 4.x, ... */
@@ -1874,3 +1877,44 @@ static void qlfix(__G__ ef_ptr, ef_len)
     }
 }
 #endif /* QLZIP */
+
+
+char OEM_CP[MAX_CP_NAME] = "";
+char ISO_CP[MAX_CP_NAME] = "";
+
+/* Get the default value of OEM_CP based on the current locale.
+ * ISO_CP is left alone for now. */
+void init_conversion_charsets()
+{
+    /* Make a guess only if OEM_CP not already set. */ 
+    if(*OEM_CP == '\0') {
+        const char * archive_charset = natspec_get_charset_by_locale(NATSPEC_DOSCS, "");
+        strncpy(OEM_CP, archive_charset, sizeof(OEM_CP));
+    }
+
+    if(*ISO_CP == '\0') {
+        const char * archive_charset = natspec_get_charset_by_locale(NATSPEC_WINCS, "");
+        strncpy(ISO_CP, archive_charset, sizeof(ISO_CP));
+    }
+
+}
+
+/* Convert a string from OEM_CP to the current locale charset. */
+inline void oem_intern(char *string)
+{
+    char *buf = natspec_convert(string, 0, OEM_CP, 0);
+	/* Since Ext_ASCII_TO_Native used only for G.filename[FILNAMESIZE],
+	   use FILNAMSIZ as string size */
+    strncpy(string, buf, FILNAMSIZ);
+	free (buf);
+}
+
+/* Convert a string from ISO_CP to the current locale charset. */
+inline void iso_intern(char *string)
+{
+    char *buf = natspec_convert(string, 0, ISO_CP, 0);
+	/* Since Ext_ASCII_TO_Native used only for G.filename[FILNAMESIZE],
+	   use FILNAMSIZ as string size */
+    strncpy(string, buf, FILNAMSIZ);
+	free (buf);
+}

@@ -52,7 +52,7 @@ CF_NOOPT = -I. -I$(IZ_BZIP2) -DUNIX $(LOC)
 CF = $(CFLAGS) $(CF_NOOPT)
 LFLAGS1 =
 LF = -o unzip$E $(LFLAGS1)
-LF2 = -s
+LF2 = -l natspec
 
 # UnZipSFX flags
 SL = -o unzipsfx$E $(LFLAGS1)
