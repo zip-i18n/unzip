@@ -1,10 +1,14 @@
 From: Giovanni Scafora <giovanni.archlinux.org>
 Subject: unzip files encoded with non-latin, non-unicode file names
+Last-Update: 2015-02-11
 
-Index: b/unix/unix.c
+Updated 2015-02-11 by Marc Deslauriers <marc.deslauriers@canonical.com>
+to fix buffer overflow in charset_to_intern()
+
+Index: unzip-6.0/unix/unix.c
 ===================================================================
---- a/unix/unix.c
-+++ b/unix/unix.c
+--- unzip-6.0.orig/unix/unix.c	2015-02-11 08:46:43.675324290 -0500
++++ unzip-6.0/unix/unix.c	2015-02-11 09:18:04.902081319 -0500
 @@ -30,6 +30,9 @@
  #define UNZIP_INTERNAL
  #include "unzip.h"
@@ -15,7 +19,7 @@ Index: b/unix/unix.c
  #ifdef SCO_XENIX
  #  define SYSNDIR
  #else  /* SCO Unix, AIX, DNIX, TI SysV, Coherent 4.x, ... */
-@@ -1874,3 +1877,90 @@
+@@ -1874,3 +1877,102 @@
      }
  }
  #endif /* QLZIP */
@@ -81,15 +85,27 @@ Index: b/unix/unix.c
 +
 +    slen = strlen(string);
 +    s = string;
-+    dlen = buflen = 2*slen;
-+    d = buf = malloc(buflen + 1);
++
++    /*  Make sure OUTBUFSIZ + 1 never ends up smaller than FILNAMSIZ
++     *  as this function also gets called with G.outbuf in fileio.c
++     */
++    buflen = FILNAMSIZ;
++    if (OUTBUFSIZ + 1 < FILNAMSIZ)
++    {
++        buflen = OUTBUFSIZ + 1;
++    }
++
++    d = buf = malloc(buflen);
 +    if(!d)
 +    	goto cleanup;
++
 +    bzero(buf,buflen);
++    dlen = buflen - 1;
++
 +    if(iconv(cd, &s, &slen, &d, &dlen) == (size_t)-1)
 +    	goto cleanup;
 +    strncpy(string, buf, buflen);
-+    
++
 +    cleanup:
 +    free(buf);
 +    iconv_close(cd);
@@ -106,10 +122,10 @@ Index: b/unix/unix.c
 +{
 +    charset_to_intern(string, ISO_CP);
 +}
-Index: b/unix/unxcfg.h
+Index: unzip-6.0/unix/unxcfg.h
 ===================================================================
---- a/unix/unxcfg.h
-+++ b/unix/unxcfg.h
+--- unzip-6.0.orig/unix/unxcfg.h	2015-02-11 08:46:43.675324290 -0500
++++ unzip-6.0/unix/unxcfg.h	2015-02-11 08:46:43.671324260 -0500
 @@ -228,4 +228,30 @@
  /* wild_dir, dirname, wildname, matchname[], dirnamelen, have_dirname, */
  /*    and notfirstcall are used by do_wild().                          */
@@ -141,10 +157,10 @@ Index: b/unix/unxcfg.h
 +void init_conversion_charsets(void);
 +   
  #endif /* !__unxcfg_h */
-Index: b/unzip.c
+Index: unzip-6.0/unzip.c
 ===================================================================
---- a/unzip.c
-+++ b/unzip.c
+--- unzip-6.0.orig/unzip.c	2015-02-11 08:46:43.675324290 -0500
++++ unzip-6.0/unzip.c	2015-02-11 08:46:43.675324290 -0500
 @@ -327,11 +327,21 @@
    -2  just filenames but allow -h/-t/-z  -l  long Unix \"ls -l\" format\n\
                                           -v  verbose, multi-page format\n";
@@ -280,10 +296,10 @@ Index: b/unzip.c
                  case ('p'):    /* pipes:  extract to stdout, no messages */
                      if (negative) {
                          uO.cflag = FALSE;
-Index: b/unzpriv.h
+Index: unzip-6.0/unzpriv.h
 ===================================================================
---- a/unzpriv.h
-+++ b/unzpriv.h
+--- unzip-6.0.orig/unzpriv.h	2015-02-11 08:46:43.675324290 -0500
++++ unzip-6.0/unzpriv.h	2015-02-11 08:46:43.675324290 -0500
 @@ -3008,7 +3008,7 @@
           !(((islochdr) || (isuxatt)) && \
             ((hostver) == 25 || (hostver) == 26 || (hostver) == 40))) || \
@@ -293,10 +309,10 @@ Index: b/unzpriv.h
          _OEM_INTERN((string)); \
      } else { \
          _ISO_INTERN((string)); \
-Index: b/zipinfo.c
+Index: unzip-6.0/zipinfo.c
 ===================================================================
---- a/zipinfo.c
-+++ b/zipinfo.c
+--- unzip-6.0.orig/zipinfo.c	2015-02-11 08:46:43.675324290 -0500
++++ unzip-6.0/zipinfo.c	2015-02-11 08:46:43.675324290 -0500
 @@ -457,6 +457,10 @@
      int    tflag_slm=TRUE, tflag_2v=FALSE;
      int    explicit_h=FALSE, explicit_t=FALSE;
