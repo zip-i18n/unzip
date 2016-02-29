@@ -3,15 +3,13 @@ Section: utils
 Priority: optional
 Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 XSBC-Original-Maintainer: Santiago Vila <sanvila@debian.org>
-Standards-Version: 3.9.2
-Build-Depends: libbz2-dev, libnatspec-dev
+Standards-Version: 3.9.6
+Build-Depends: debhelper (>= 9), libbz2-dev, libnatspec-dev
 Homepage: http://www.info-zip.org/UnZip.html
 
 Package: unzip
 Architecture: any
-Depends: ${shlibs:Depends}
-Conflicts: unzip-crypt (<< 5.41)
-Replaces: unzip-crypt (<< 5.41)
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Suggests: zip
 Multi-Arch: foreign
 Description: De-archiver for .zip files
